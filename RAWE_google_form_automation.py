@@ -19,32 +19,33 @@ import pandas as pd
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 
 FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSeAjfujYObtb_K79YzlOAOAMeo8dclD2C7jjDpyl3UMZnQ8dg/viewform"
-EXCEL_FILE = "Anand_IPL_RAWE_2026.xlsx"
-SHEET_NAME = "Anand"
+EXCEL_FILE = "HIAMSHI RAWE.xlsx"
+SHEET_NAME = "Himanshi"
 
 def find_photo_dir():
     candidates = [
         os.environ.get("PHOTO_DIR", ""),
+        "/Users/anand/Downloads/rawe",
         "/Users/anand/Downloads/A Rawe",
+        str(Path(__file__).parent / "rawe"),
         str(Path(__file__).parent / "photos"),
-        str(Path(__file__).parent / "A Rawe"),
+        str(Path.home() / "Downloads" / "rawe"),
         str(Path.home() / "Downloads" / "A Rawe"),
-        str(Path.home() / "Downloads" / "photos"),
     ]
     for c in candidates:
         if c and Path(c).is_dir():
             return c
-    return "/Users/anand/Downloads/A Rawe"
+    return "/Users/anand/Downloads/rawe"
 
 # CONFIGURATION
 DRY_RUN = False             # Set to False so we can progress through farmers
 USER_CLICKS_SUBMIT = True   # USER controls the final submit click!
-START_ROW = 2               # Zero-based: 2 = Excel row 4 (Prabhu). Rows 2 & 3 already submitted.
-MAX_ROWS = 100              # Total farmers to process
+START_ROW = 0               # Zero-based: 0 = Excel row 2 (Ashu Tyagi)
+MAX_ROWS = 101              # Total farmers in Himanshi sheet
 PROFILE_DIR = "google_form_browser_profile"
 PHOTO_DIR = find_photo_dir()
-RUN_LOG_FILE = "rawe_submission_log.csv"
-REQUIRE_PHOTO_FOR_SUBMISSION = False  # Set to False because photos are attached during manual review
+RUN_LOG_FILE = "himanshi_submission_log.csv"
+REQUIRE_PHOTO_FOR_SUBMISSION = False
 
 # If photos are not named by registration ID, add mappings here:
 PHOTO_MAP = {}
@@ -194,7 +195,7 @@ def remove_existing_uploaded_files(page):
     if removed:
         page.wait_for_timeout(1500)
 
-def wait_for_section_content(page, expected_text, max_wait_sec=8):
+def wait_for_section_content(page, expected_text, max_wait_sec=5):
     """Wait until expected text or question is visible on the active page."""
     start = time.time()
     while time.time() - start < max_wait_sec:
@@ -204,38 +205,23 @@ def wait_for_section_content(page, expected_text, max_wait_sec=8):
                 return True
         except Exception:
             pass
-        page.wait_for_timeout(300)
+        page.wait_for_timeout(80)
     return False
 
 def click_next(page, section_name="", expect_text=None):
-    page.wait_for_timeout(400)
-    try:
-        page.evaluate("() => { const el = document.body || document.documentElement; if (el) window.scrollTo(0, el.scrollHeight); }")
-    except Exception:
-        pass
-    page.wait_for_timeout(300)
-
-    btn = page.get_by_role("button", name=re.compile(r"^Next$", re.I))
-    if btn.count() == 0:
-        btn = page.locator('div[role="button"]:has-text("Next"), button:has-text("Next"), span:has-text("Next")')
-    
+    btn = page.locator('div[role="button"]:has-text("Next"), button:has-text("Next"), span:has-text("Next")')
     if btn.count() > 0:
         for attempt in range(3):
             try:
-                btn.first.scroll_into_view_if_needed()
-                page.wait_for_timeout(200)
-                btn.first.click()
-                page.wait_for_timeout(1000)
-
-                # If we expect specific text on the next page, verify it arrived
+                btn.first.click(force=True)
                 if expect_text:
-                    if wait_for_section_content(page, expect_text, max_wait_sec=4):
+                    if wait_for_section_content(page, expect_text, max_wait_sec=3):
                         return True
                 else:
-                    page.wait_for_timeout(1000)
+                    page.wait_for_timeout(300)
                     return True
             except Exception:
-                page.wait_for_timeout(500)
+                page.wait_for_timeout(200)
 
     # Check if we are already on the final Submit page
     submit_btn = page.locator('div[role="button"]:has-text("Submit"), button:has-text("Submit")')
@@ -249,23 +235,19 @@ def click_next(page, section_name="", expect_text=None):
             err_item = errors.nth(i)
             q_name = err_item.inner_text().replace('\n', ' ')[:60]
             print(f"  ⚠️ Blocked by required question: '{q_name}'", flush=True)
-            # Try to auto-fill any empty input in the error container if visible
             try:
                 inp = err_item.locator("input:not([type=hidden]), textarea")
                 if inp.count() and not inp.first.input_value():
-                    # If it contains Block, fill it with default/fallback
                     if "block" in q_name.lower():
                         inp.first.fill("Charthawal")
-                        page.wait_for_timeout(300)
             except Exception:
                 pass
         
-        # Try clicking Next one more time after auto-filling
         btn = page.locator('div[role="button"]:has-text("Next"), button:has-text("Next")')
         if btn.count():
             try:
-                btn.first.click()
-                page.wait_for_timeout(1000)
+                btn.first.click(force=True)
+                page.wait_for_timeout(400)
             except Exception:
                 pass
     return False
@@ -744,33 +726,30 @@ def upload_photo(page, photo_path):
 
 def open_first_question_section(page):
     """Advance through the form's account/introduction screen, if present."""
-    reg = page.get_by_role("textbox", name=re.compile(r"Registration ID", re.I))
+    reg = page.locator('div[role="listitem"]').filter(has_text="Registration ID")
     if reg.count() > 0 and reg.first.is_visible():
         return
 
     # Click Next on intro screen
-    next_btn = page.get_by_role("button", name=re.compile(r"^Next$", re.I))
-    if next_btn.count() == 0:
-        next_btn = page.locator('div[role="button"]:has-text("Next"), button:has-text("Next")')
+    next_btn = page.locator('div[role="button"]:has-text("Next"), button:has-text("Next")')
     if next_btn.count() > 0 and next_btn.first.is_visible():
         next_btn.first.click()
-        page.wait_for_timeout(2000)
 
     try:
-        reg.wait_for(state="visible", timeout=10_000)
-    except PlaywrightTimeoutError as exc:
-        raise RuntimeError(
-            "Could not reach the Registration ID section. Check that the browser is signed "
-            "in to the Google account permitted to use this form."
-        ) from exc
+        page.locator('input:not([type=hidden])').first.wait_for(state="visible", timeout=6_000)
+    except Exception:
+        pass
 
 def main():
     df = pd.read_excel(EXCEL_FILE, sheet_name=SHEET_NAME)
-    print(f"Loaded {len(df)} farmer records and {len(df.columns)} columns.", flush=True)
+    print(f"Loaded {len(df)} farmer records and {len(df.columns)} columns from {EXCEL_FILE} [{SHEET_NAME}].", flush=True)
     end = min(len(df), START_ROW + MAX_ROWS)
     completed_rows = logged_excel_rows()
     if completed_rows:
         print(f"Resume mode: {len(completed_rows)} already-submitted Excel row(s) will be skipped: {sorted(completed_rows)}", flush=True)
+
+    total_photos = len(get_all_photos())
+    print(f"📁 Photo Source: {PHOTO_DIR} ({total_photos} photos detected)\n", flush=True)
 
     with sync_playwright() as p:
         context = p.chromium.launch_persistent_context(
@@ -786,19 +765,19 @@ def main():
         )
         page = context.pages[0] if context.pages else context.new_page()
         page.goto(FORM_URL, wait_until="domcontentloaded")
-        page.wait_for_timeout(2000)
+        page.wait_for_timeout(1000)
 
         if "accounts.google.com" in page.url:
             print("\nIf Google asks you to sign in, sign in manually in the opened browser.")
             print("Then return here and press Enter.")
             input()
         else:
-            print("\n✅ Authenticated Google session detected! Proceeding automatically...", flush=True)
+            print("✅ Authenticated Google session detected! Proceeding automatically...", flush=True)
 
         for idx in range(START_ROW, end):
             excel_row_num = idx + 2
             row = df.iloc[idx]
-            farmer_name = clean(row["farmer_name"])
+            farmer_name = clean(row.get("farmer_name", ""))
             if excel_row_num in completed_rows:
                 print(f"SKIPPED already submitted: Excel row {excel_row_num} ({farmer_name})", flush=True)
                 continue
@@ -808,18 +787,15 @@ def main():
             print(f"=" * 60, flush=True)
 
             try:
-                # Reload a clean form for every farmer.
-                page.goto(FORM_URL, wait_until="domcontentloaded")
-                page.wait_for_timeout(1500)
-
-                # If showing 'Submit another response' page
+                # Reload clean form or click 'Submit another response'
                 if "formResponse" in page.url:
                     another = page.locator('a:has-text("Submit another response"), a:has-text("another response")')
                     if another.count():
                         another.first.click()
-                        page.wait_for_timeout(1500)
                     else:
                         page.goto(FORM_URL, wait_until="domcontentloaded")
+                else:
+                    page.goto(FORM_URL, wait_until="domcontentloaded")
 
                 open_first_question_section(page)
                 photo = fill_row(page, row, excel_row_num)
@@ -829,7 +805,7 @@ def main():
                 if USER_CLICKS_SUBMIT:
                     print("\n" + "*" * 65, flush=True)
                     print(f"👉 Farmer {idx + 1} ({farmer_name}) is FULLY FILLED & PHOTO ATTACHED in Chrome!", flush=True)
-                    print(f"   📸 Photo ({photo_num}/89): {photo_name}")
+                    print(f"   📸 Photo ({photo_num}/{total_photos}): {photo_name}")
                     print(f"   👉 In Chrome: Review the form and click SUBMIT.")
                     print("*" * 65, flush=True)
                     user_cmd = input(f"\nPress ENTER after you click Submit in Chrome (or type 'q' to stop, 'skip' to skip): ").strip().lower()
@@ -844,7 +820,6 @@ def main():
                         log_result(row, excel_row_num, "submitted", f"User confirmed submit (photo={photo_name})")
                         completed_rows.add(excel_row_num)
                         print(f"✅ Excel row {excel_row_num} ({farmer_name}) logged as SUBMITTED!")
-                        time.sleep(1)
                         continue
 
                 if DRY_RUN:
