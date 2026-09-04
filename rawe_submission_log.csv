@@ -1,0 +1,39 @@
+timestamp_utc,excel_row,registration_id,farmer_name,status,detail
+2026-09-03T10:19:02.973494+00:00,2,ICRO/2026/20260800788,Sushil Kumar,failed,Could not reach the Registration ID section of the form.
+2026-09-03T10:20:04.305854+00:00,2,ICRO/2026/20260800788,Sushil Kumar,failed,"Locator.wait_for: Target page, context or browser has been closed Call log:   - waiting for get_by_role(""textbox"", name=re.compile(r""Registration ID"", re.IGNORECASE)) to be visible"
+2026-09-03T10:49:16.223932+00:00,2,ICRO/2026/20260800788,Sushil Kumar,failed,"Locator.fill: Error: Malformed value Call log:   - waiting for locator(""div[role=\""listitem\""]"").filter(has_text=""Survey Date"").first.locator(""input:not([type=hidden])"").first     - locator resolved to <input dir=""ltr"" type=""date"" tabindex=""0"" jsname=""YPqjbf"" max=""2076-01-01"" badinput=""false"" autocomplete=""off"" class=""whsOnd zHQkBf"" aria-labelledby=""i21"" aria-disabled=""false"" data-initial-value=""2026-08-12""/>     - fill(""08/11/2026"")   - attempting fill action     - waiting for element to be vis"
+2026-09-03T10:50:46.542967+00:00,2,ICRO/2026/20260800788,Sushil Kumar,failed,'NoneType' object has no attribute 'locator'
+2026-09-03T10:57:14.795645+00:00,2,ICRO/2026/20260800788,Sushil Kumar,failed,find_question() got an unexpected keyword argument 'timeout'
+2026-09-03T10:58:22.476014+00:00,2,ICRO/2026/20260800788,Sushil Kumar,submitted,Manual confirmation
+2026-09-03T11:00:00.000000+00:00,3,ICRO/2026/20260800788,Babu ram,submitted,Manual confirmation
+2026-09-03T11:08:03.304609+00:00,4,ICRO/2026/20260800788,Prabhu,submitted,User confirmed submit (photo=none)
+2026-09-03T13:07:59.820876+00:00,5,ICRO/2026/20260800788,Parveen,submitted,User confirmed submit (photo=20260812_115325AMByGPSMapCamera.jpg)
+2026-09-03T13:08:21.558962+00:00,6,ICRO/2026/20260800788,Karshna,failed,"Page.evaluate: TypeError: Cannot read properties of null (reading 'scrollHeight')     at eval (eval at evaluate (:311:30), <anonymous>:1:34)     at eval (<anonymous>)     at UtilityScript.evaluate (<anonymous>:311:30)     at UtilityScript.<anonymous> (<anonymous>:1:44)"
+2026-09-03T13:19:38.421796+00:00,6,ICRO/2026/20260800788,Karshna,submitted,User confirmed submit (photo=20260812_115919AMByGPSMapCamera.jpg)
+2026-09-03T13:22:12.364013+00:00,7,ICRO/2026/20260800788,Mahipal,submitted,User confirmed submit (photo=20260812_120028PMByGPSMapCamera.jpg)
+2026-09-03T13:23:57.439153+00:00,8,ICRO/2026/20260800788,Sanmista,submitted,User confirmed submit (photo=20260812_120400PMByGPSMapCamera.jpg)
+2026-09-03T13:26:00.325334+00:00,9,ICRO/2026/20260800788,Sita ram,submitted,User confirmed submit (photo=20260812_120617PMByGPSMapCamera.jpg)
+2026-09-03T13:33:03.149705+00:00,10,ICRO/2026/20260800788,Shubhash,submitted,User confirmed submit (photo=20260812_120804PMByGPSMapCamera.jpg)
+2026-09-03T13:43:13.438761+00:00,11,ICRO/2026/20260800788,Anuj Kumar,submitted,User confirmed submit (photo=20260812_122157PMByGPSMapCamera.jpg)
+2026-09-03T13:49:19.008274+00:00,12,ICRO/2026/20260800788,Reshma,submitted,User confirmed submit (photo=20260812_122304PMByGPSMapCamera.jpg)
+2026-09-03T13:53:03.600499+00:00,13,ICRO/2026/20260800788,Parveen Kumar,submitted,User confirmed submit (photo=20260812_122746PMByGPSMapCamera.jpg)
+2026-09-03T13:56:33.766860+00:00,14,ICRO/2026/20260800788,Niraj Kumar,submitted,User confirmed submit (photo=20260812_122833PMByGPSMapCamera.jpg)
+2026-09-03T14:01:31.120261+00:00,15,ICRO/2026/20260800788,Hiran nand,submitted,User confirmed submit (photo=20260812_123303PMByGPSMapCamera.jpg)
+2026-09-03T14:05:13.871367+00:00,16,ICRO/2026/20260800788,Vijender,submitted,User confirmed submit (photo=20260812_123543PMByGPSMapCamera.jpg)
+2026-09-03T14:09:40.874908+00:00,17,ICRO/2026/20260800788,Vijender,submitted,User confirmed submit (photo=20260812_123718PMByGPSMapCamera.jpg)
+2026-09-03T14:10:50.488255+00:00,18,ICRO/2026/20260800788,Mahendr,submitted,User confirmed submit (photo=20260812_124419PMByGPSMapCamera.jpg)
+2026-09-03T14:16:15.643959+00:00,19,ICRO/2026/20260800788,Sonit,submitted,User confirmed submit (photo=20260812_124732PMByGPSMapCamera.jpg)
+2026-09-03T14:22:56.840338+00:00,20,ICRO/2026/20260800788,Nitin,submitted,User confirmed submit (photo=20260812_124940PMByGPSMapCamera.jpg)
+2026-09-03T14:27:38.462054+00:00,21,ICRO/2026/20260800788,Shyam,submitted,User confirmed submit (photo=20260812_125152PMByGPSMapCamera.jpg)
+2026-09-03T14:29:51.252812+00:00,22,ICRO/2026/20260800788,Dipanshu,submitted,User confirmed submit (photo=20260813_101425AMByGPSMapCamera.jpg)
+2026-09-03T14:31:23.071338+00:00,23,ICRO/2026/20260800788,Shubhash,submitted,User confirmed submit (photo=20260813_101552AMByGPSMapCamera.jpg)
+2026-09-03T14:33:02.853463+00:00,24,ICRO/2026/20260800788,Ajay kumar,submitted,User confirmed submit (photo=20260813_101854AMByGPSMapCamera.jpg)
+2026-09-03T14:35:05.458763+00:00,25,ICRO/2026/20260800788,Azad Singh,submitted,User confirmed submit (photo=20260813_103244AMByGPSMapCamera.jpg)
+2026-09-03T14:39:08.621522+00:00,26,ICRO/2026/20260800788,Rajendra kumar,submitted,User confirmed submit (photo=20260813_103656AMByGPSMapCamera.jpg)
+2026-09-03T14:41:51.360949+00:00,27,ICRO/2026/20260800788,Medvati,submitted,User confirmed submit (photo=20260813_105829AMByGPSMapCamera.jpg)
+2026-09-03T14:49:19.158761+00:00,28,ICRO/2026/20260800788,Bhim,submitted,User confirmed submit (photo=20260813_120735PMByGPSMapCamera.jpg)
+2026-09-03T14:50:59.650729+00:00,29,ICRO/2026/20260800788,Satyendra,submitted,User confirmed submit (photo=20260813_95212AMByGPSMapCamera.jpg)
+2026-09-03T14:55:42.530216+00:00,30,ICRO/2026/20260800788,Om rath,submitted,User confirmed submit (photo=20260813_95333AMByGPSMapCamera.jpg)
+2026-09-04T10:41:49.617624+00:00,31,ICRO/2026/20260800788,Nishu,submitted,User confirmed submit (photo=20260813_95500AMByGPSMapCamera.jpg)
+2026-09-04T10:49:10.495565+00:00,32,ICRO/2026/20260800788,Pravesh,submitted,User confirmed submit (photo=20260813_95554AMByGPSMapCamera.jpg)
+2026-09-04T10:53:38.858236+00:00,33,ICRO/2026/20260800788,Ravindra,submitted,User confirmed submit (photo=20260813_95749AMByGPSMapCamera.jpg)
