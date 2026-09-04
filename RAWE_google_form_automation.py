@@ -610,10 +610,9 @@ def fill_row(page, row, excel_row_num=None):
     fill_single(page, "member of a Primary Agricultural Cooperative Society", row.get("Are you a member of a Primary Agricultural Cooperative Society?", ""))
     fill_single(page, "subscribed to the IPL You Tube channel", row.get("Has the farmer subscribed to the IPL YouTube channel?", "") or "Yes")
     
-    # Question 17: Required / starred field on Google Forms -> Default to "Yes"
-    sub_val = clean(row.get("If no, were you able to make the farmer subscribe?", "")) or "Yes"
-    fill_single(page, "make the farmer subscribe", sub_val)
-    fill_single(page, "If No, were you able to make the farmer subscribe", sub_val)
+    # Question 17: Required / starred field on Google Forms -> Always select "Yes" for all farmers
+    fill_single(page, "make the farmer subscribe", "Yes")
+    fill_single(page, "If No, were you able to make the farmer subscribe", "Yes")
 
     # Remove any existing/stale photo from previous draft before uploading
     remove_existing_uploaded_files(page)
