@@ -667,7 +667,7 @@ def upload_photo(page, photo_path):
         if inp.count() > 0:
             try:
                 inp.first.set_input_files(photo_path)
-                print(f"  ⏳ Photo selected. Processing upload...", flush=True)
+                print(f"  ⏳ Photo selected. Initiating upload...", flush=True)
             except Exception as e:
                 print(f"  [Notice] File input set error: {e}", flush=True)
         else:
@@ -683,17 +683,33 @@ def upload_photo(page, photo_path):
                 except Exception as e:
                     print(f"  [Notice] Browse button error: {e}", flush=True)
 
+        page.wait_for_timeout(1000)
+
+        # Click the Upload button inside the Google Drive picker modal
+        upload_btn = picker.locator('button:has-text("Upload"), [role="button"]:has-text("Upload"), div[id*="upload" i]:has-text("Upload"), div[aria-label*="Upload" i], div.picker-action-button')
+        if upload_btn.count() > 0:
+            try:
+                upload_btn.last.click(force=True)
+                print(f"  ⏳ Clicked Upload button. Waiting for upload progress...", flush=True)
+            except Exception:
+                pass
+
         # Wait for upload modal to complete and close
-        try:
-            page.wait_for_selector('iframe[src*="picker"]', state="detached", timeout=25000)
-            print(f"  ✅ Photo '{photo_name}' uploaded successfully!", flush=True)
-            return True
-        except Exception:
-            page.wait_for_timeout(2000)
-            chip = page.locator('[aria-label*="Remove" i], [aria-label*="Delete" i]')
+        for wait_sec in range(30):
+            page.wait_for_timeout(1000)
+            chip = page.locator('[aria-label*="Remove" i], [aria-label*="Delete" i], [data-tooltip*="Remove" i]')
             if chip.count() > 0:
-                print(f"  ✅ Photo '{photo_name}' uploaded successfully!", flush=True)
+                print(f"  ✅ Photo '{photo_name}' uploaded and attached successfully!", flush=True)
                 return True
+            # Check if picker closed
+            if not any("picker" in f.url for f in page.frames):
+                break
+
+    # Final check on main form
+    chip = page.locator('[aria-label*="Remove" i], [aria-label*="Delete" i], [data-tooltip*="Remove" i]')
+    if chip.count() > 0:
+        print(f"  ✅ Photo '{photo_name}' attached successfully!", flush=True)
+        return True
 
     print("  ⚠️ Picker did not auto-close. You can attach photo manually in Chrome.", flush=True)
     return False
