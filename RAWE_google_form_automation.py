@@ -179,6 +179,7 @@ def remove_existing_uploaded_files(page):
         '[data-tooltip*="Remove" i]',
         '[data-tooltip*="Delete" i]',
     ]
+    removed = False
     for sel in rem_selectors:
         btns = page.locator(sel)
         for i in range(btns.count()):
@@ -186,10 +187,12 @@ def remove_existing_uploaded_files(page):
                 b = btns.nth(i)
                 if b.is_visible():
                     b.click()
-                    page.wait_for_timeout(500)
+                    removed = True
                     print("  🧹 Removed previous draft photo!", flush=True)
             except Exception:
                 pass
+    if removed:
+        page.wait_for_timeout(1500)
 
 def wait_for_section_content(page, expected_text, max_wait_sec=8):
     """Wait until expected text or question is visible on the active page."""
@@ -630,87 +633,113 @@ def upload_photo(page, photo_path):
         return False
 
     photo_name = Path(photo_path).name
+
+    # Check if a photo is already attached on the form
+    chip = page.locator('[aria-label*="Remove" i], [aria-label*="Delete" i], [data-tooltip*="Remove" i]')
+    if chip.count() > 0 and chip.first.is_visible():
+        print(f"  ✅ Photo '{photo_name}' is already attached to form.", flush=True)
+        return True
+
     print(f"  📸 Auto-uploading photo to Google Forms: {photo_name}...", flush=True)
 
-    add_btn = page.get_by_text("Add file", exact=True)
-    if add_btn.count() == 0:
+    for attempt in range(2):
+        # 1. Look for Add file button
         add_btn = page.locator('div[role="button"]:has-text("Add file"), span:has-text("Add file"), button:has-text("Add file")')
+        if add_btn.count() == 0:
+            add_btn = page.get_by_text("Add file", exact=True)
 
-    if add_btn.count() == 0:
-        print("  ⚠️ 'Add file' button not found on page.", flush=True)
-        return False
+        if add_btn.count() == 0:
+            print("  ⚠️ 'Add file' button not found on page.", flush=True)
+            return False
 
-    try:
-        add_btn.first.scroll_into_view_if_needed()
-        page.wait_for_timeout(300)
-        add_btn.first.click()
-        page.wait_for_timeout(2500)
-    except Exception as e:
-        print(f"  ⚠️ Could not click 'Add file': {e}", flush=True)
-        return False
+        try:
+            add_btn.first.scroll_into_view_if_needed()
+            page.wait_for_timeout(500)
+            add_btn.first.click()
+            # Allow time for Google Drive picker iframe to open and authenticate
+            page.wait_for_timeout(2000)
+        except Exception as e:
+            print(f"  ⚠️ Could not click 'Add file': {e}", flush=True)
+            return False
 
-    # Look for Google Drive picker iframe
-    picker = None
-    for attempt in range(8):
-        for f in page.frames:
-            if "picker" in f.url or "docs.google.com/picker" in f.url:
-                picker = f
+        # 2. Find Google Drive picker frame
+        picker = None
+        for _ in range(12):
+            for f in page.frames:
+                if "picker" in f.url or "docs.google.com/picker" in f.url:
+                    picker = f
+                    break
+            if picker:
                 break
-        if picker:
-            break
-        page.wait_for_timeout(500)
+            page.wait_for_timeout(500)
 
-    if picker:
-        # Method 1: direct file input inside picker iframe
-        inp = picker.locator('input[type="file"]')
-        if inp.count() > 0:
+        if not picker:
+            print("  ⚠️ Google Drive picker modal not found, retrying...", flush=True)
+            page.wait_for_timeout(1000)
+            continue
+
+        # Let the picker iframe finish initial handshake (prevents sandbox auto-refresh)
+        page.wait_for_timeout(1000)
+
+        # 3. Use Browse button with expect_file_chooser (native browser event, prevents iframe crash)
+        browse_btn = picker.locator('#uploadButtonId, button:has-text("Browse"), div[role="button"]:has-text("Browse")')
+        file_set = False
+
+        if browse_btn.count() > 0 and browse_btn.first.is_visible():
             try:
-                inp.first.set_input_files(photo_path)
-                print(f"  ⏳ Photo selected. Initiating upload...", flush=True)
+                with page.expect_file_chooser(timeout=8000) as fc_info:
+                    browse_btn.first.click()
+                file_chooser = fc_info.value
+                file_chooser.set_files(photo_path)
+                file_set = True
+                print(f"  ⏳ File chosen via Browse: {photo_name}", flush=True)
             except Exception as e:
-                print(f"  [Notice] File input set error: {e}", flush=True)
-        else:
-            # Method 2: Browse button file chooser
-            browse_btn = picker.locator('#uploadButtonId, button:has-text("Browse")')
-            if browse_btn.count() > 0:
+                print(f"  [Notice] Browse file chooser: {e}", flush=True)
+
+        if not file_set:
+            # Fallback to direct input inside picker
+            inp = picker.locator('input[type="file"]')
+            if inp.count() > 0:
                 try:
-                    with page.expect_file_chooser(timeout=8000) as fc_info:
-                        browse_btn.first.click()
-                    file_chooser = fc_info.value
-                    file_chooser.set_files(photo_path)
-                    print(f"  ⏳ File chooser set photo: {photo_name}", flush=True)
+                    inp.first.set_input_files(photo_path)
+                    file_set = True
+                    print(f"  ⏳ File input set: {photo_name}", flush=True)
                 except Exception as e:
-                    print(f"  [Notice] Browse button error: {e}", flush=True)
+                    print(f"  [Notice] File input set: {e}", flush=True)
+
+        if not file_set:
+            print("  ⚠️ Could not set file in picker, retrying...", flush=True)
+            page.wait_for_timeout(1000)
+            continue
 
         page.wait_for_timeout(1000)
 
-        # Click the Upload button inside the Google Drive picker modal
+        # 4. Click Upload action button inside picker modal
         upload_btn = picker.locator('button:has-text("Upload"), [role="button"]:has-text("Upload"), div[id*="upload" i]:has-text("Upload"), div[aria-label*="Upload" i], div.picker-action-button')
         if upload_btn.count() > 0:
             try:
                 upload_btn.last.click(force=True)
-                print(f"  ⏳ Clicked Upload button. Waiting for upload progress...", flush=True)
+                print(f"  ⏳ Upload initiated in Google Drive picker...", flush=True)
             except Exception:
                 pass
 
-        # Wait for upload modal to complete and close
-        for wait_sec in range(30):
+        # 5. Wait for upload to complete and picker modal to detach
+        for _ in range(30):
             page.wait_for_timeout(1000)
             chip = page.locator('[aria-label*="Remove" i], [aria-label*="Delete" i], [data-tooltip*="Remove" i]')
             if chip.count() > 0:
                 print(f"  ✅ Photo '{photo_name}' uploaded and attached successfully!", flush=True)
                 return True
-            # Check if picker closed
             if not any("picker" in f.url for f in page.frames):
                 break
 
-    # Final check on main form
-    chip = page.locator('[aria-label*="Remove" i], [aria-label*="Delete" i], [data-tooltip*="Remove" i]')
-    if chip.count() > 0:
-        print(f"  ✅ Photo '{photo_name}' attached successfully!", flush=True)
-        return True
+        # Check attached chip
+        chip = page.locator('[aria-label*="Remove" i], [aria-label*="Delete" i], [data-tooltip*="Remove" i]')
+        if chip.count() > 0:
+            print(f"  ✅ Photo '{photo_name}' attached successfully!", flush=True)
+            return True
 
-    print("  ⚠️ Picker did not auto-close. You can attach photo manually in Chrome.", flush=True)
+    print("  ⚠️ Auto-upload finished. You can verify or attach photo manually in Chrome.", flush=True)
     return False
 
 def open_first_question_section(page):
