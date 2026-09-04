@@ -615,7 +615,85 @@ def fill_row(page, row, excel_row_num=None):
     # Remove any existing/stale photo from previous draft before uploading
     remove_existing_uploaded_files(page)
 
-    return resolve_photo(row, excel_row_num)
+    photo = resolve_photo(row, excel_row_num)
+    if photo:
+        upload_photo(page, photo)
+
+    return photo
+
+def upload_photo(page, photo_path):
+    """Automatically upload farmer's photo via Google Drive picker in Google Forms."""
+    if not photo_path or not Path(photo_path).is_file():
+        print(f"  [Notice] No photo file found on disk: {photo_path}", flush=True)
+        return False
+
+    photo_name = Path(photo_path).name
+    print(f"  📸 Auto-uploading photo to Google Forms: {photo_name}...", flush=True)
+
+    add_btn = page.get_by_text("Add file", exact=True)
+    if add_btn.count() == 0:
+        add_btn = page.locator('div[role="button"]:has-text("Add file"), span:has-text("Add file"), button:has-text("Add file")')
+
+    if add_btn.count() == 0:
+        print("  ⚠️ 'Add file' button not found on page.", flush=True)
+        return False
+
+    try:
+        add_btn.first.scroll_into_view_if_needed()
+        page.wait_for_timeout(300)
+        add_btn.first.click()
+        page.wait_for_timeout(2500)
+    except Exception as e:
+        print(f"  ⚠️ Could not click 'Add file': {e}", flush=True)
+        return False
+
+    # Look for Google Drive picker iframe
+    picker = None
+    for attempt in range(8):
+        for f in page.frames:
+            if "picker" in f.url or "docs.google.com/picker" in f.url:
+                picker = f
+                break
+        if picker:
+            break
+        page.wait_for_timeout(500)
+
+    if picker:
+        # Method 1: direct file input inside picker iframe
+        inp = picker.locator('input[type="file"]')
+        if inp.count() > 0:
+            try:
+                inp.first.set_input_files(photo_path)
+                print(f"  ⏳ Photo selected. Processing upload...", flush=True)
+            except Exception as e:
+                print(f"  [Notice] File input set error: {e}", flush=True)
+        else:
+            # Method 2: Browse button file chooser
+            browse_btn = picker.locator('#uploadButtonId, button:has-text("Browse")')
+            if browse_btn.count() > 0:
+                try:
+                    with page.expect_file_chooser(timeout=8000) as fc_info:
+                        browse_btn.first.click()
+                    file_chooser = fc_info.value
+                    file_chooser.set_files(photo_path)
+                    print(f"  ⏳ File chooser set photo: {photo_name}", flush=True)
+                except Exception as e:
+                    print(f"  [Notice] Browse button error: {e}", flush=True)
+
+        # Wait for upload modal to complete and close
+        try:
+            page.wait_for_selector('iframe[src*="picker"]', state="detached", timeout=25000)
+            print(f"  ✅ Photo '{photo_name}' uploaded successfully!", flush=True)
+            return True
+        except Exception:
+            page.wait_for_timeout(2000)
+            chip = page.locator('[aria-label*="Remove" i], [aria-label*="Delete" i]')
+            if chip.count() > 0:
+                print(f"  ✅ Photo '{photo_name}' uploaded successfully!", flush=True)
+                return True
+
+    print("  ⚠️ Picker did not auto-close. You can attach photo manually in Chrome.", flush=True)
+    return False
 
 def open_first_question_section(page):
     """Advance through the form's account/introduction screen, if present."""
@@ -703,9 +781,9 @@ def main():
 
                 if USER_CLICKS_SUBMIT:
                     print("\n" + "*" * 65, flush=True)
-                    print(f"👉 Farmer {idx + 1} ({farmer_name}) is FULLY FILLED in Chrome!", flush=True)
-                    print(f"   📸 Matching Photo ({photo_num}/89): {photo_name}")
-                    print(f"   👉 In Chrome: Click 'Add file' -> select '{photo_name}', then click SUBMIT.")
+                    print(f"👉 Farmer {idx + 1} ({farmer_name}) is FULLY FILLED & PHOTO ATTACHED in Chrome!", flush=True)
+                    print(f"   📸 Photo ({photo_num}/89): {photo_name}")
+                    print(f"   👉 In Chrome: Review the form and click SUBMIT.")
                     print("*" * 65, flush=True)
                     user_cmd = input(f"\nPress ENTER after you click Submit in Chrome (or type 'q' to stop, 'skip' to skip): ").strip().lower()
 
